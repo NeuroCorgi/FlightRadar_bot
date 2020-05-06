@@ -35,7 +35,7 @@ classifier = KNNClassifier(neighbors=3)
 classifier.fit(X, y)
 
 
-@app.route('/alice/')
+@app.route('/alice/', methods=["POST"])
 def alice():
     response = {
         'session': request.json['session'],
@@ -80,8 +80,3 @@ def handle_alice_dialog(req, res):
         res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
         res['response']['end_session'] = True
         return
-
-
-
-if __name__ == '__main__':
-    app.run()
