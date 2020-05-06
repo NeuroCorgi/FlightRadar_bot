@@ -1,15 +1,12 @@
 import json
 import logging
 
-import schedule
-
 from project.errors import *
 from project.models import KNNClassifier
 from project.parser import (
     Vectorizer,
     Answer
 )
-
 
 from flask import (
     Flask,
@@ -27,9 +24,6 @@ with open('project/data/corpus') as study_data:
 y = np.array([y])
 
 X = vectorizer.fit_transform(X).toarray()
-print(X, y)
-print(X.shape)
-print(y.shape)
 
 classifier = KNNClassifier(neighbors=3)
 classifier.fit(X, y)
