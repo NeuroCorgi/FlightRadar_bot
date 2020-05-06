@@ -14,7 +14,7 @@ from sklearn.feature_extraction.text import TfidfVectorizer
 PATH = "project/data/patterns/"
 
 
-def _match_flight_number(text) -> re.Match:
+def _match_flight_number(text):
     regex = r"[a-zа-я0-9]( )?[a-zа-я0-9]( )?[a-zа-я0-9]( )?[a-zа-я0-9]( )?[a-zа-я0-9](( )?[a-zа-я0-9](( )?[a-zа-я0-9])?)?"
     number = re.match(regex, text, re.IGNORECASE)
     return number
