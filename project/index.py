@@ -35,6 +35,11 @@ classifier = KNNClassifier(neighbors=3)
 classifier.fit(X, y)
 
 
+@app.route('/')
+def home():
+    return {"result": "ok"}
+
+
 @app.route('/alice/', methods=["POST"])
 def alice():
     response = {
