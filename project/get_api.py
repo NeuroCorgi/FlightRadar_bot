@@ -7,7 +7,7 @@ session = Session()
 session.headers.update({'User-agent': 'mkorkmaz/FR24/2.0'})
 
 
-def get_flights_by_dep_arr_city(dep_city, arr_city) -> dict:
+def get_flight_by_dep_arr_city(dep_city, arr_city) -> dict:
     """Получает рейсы по городам валета и посадки"""
     now = datetime.now().timestamp()
 
@@ -21,9 +21,11 @@ def get_flights_by_dep_arr_city(dep_city, arr_city) -> dict:
         if flights[i]['status']['live']:
             return flights[i]
 
-    abs = lambda x: 2 * abs(x) if x < 0 else x
-
-    return min(flights, key=lambda flight: flight['time']['scheduled']['departure'] - now)
+    abs_ = lambda x: 2 * abs(x) if x < 0 else x
+    try:
+        return min(flights, key=lambda flight: abs_(flight['time']['scheduled']['departure'] - now))
+    except ValueError:
+        return {}
 
 
 def get_flight_by_number(flight_number) -> dict:
@@ -55,3 +57,7 @@ def translate(text) -> str:
     api_key = "trnsl.1.1.20200508T101107Z.b482f8350bed9bb7.c9f545e58c6b697c6d1c46e5a6ce11c1630ca765"
     tr_text = session.get(f"https://translate.yandex.net/api/v1.5/tr.json/translate?key={api_key}&lang=ru-en&text={text}").json()
     return tr_text['text'][0]
+
+
+if __name__ == "__main__":
+    print(get_flights_by_dep_arr_city("svo", 'mcx'))

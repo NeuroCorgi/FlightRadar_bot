@@ -62,15 +62,21 @@ class SideDataParser:
 
     @staticmethod
     def parse_dep_city(sent):
-        t1 = re.search(r"из (\w+)", sent)[1]
-        t2 = re.search(r"по маршруту (\w+)", sent)[1]
-        return t1 if t1 else t2
+        t1 = re.search(r"из (\w+)", sent)
+        if t1:
+            return t1[1]
+        t2 = re.search(r"по маршруту (\w+)", sent)
+        if t2:
+            return t2[1]
     
     @staticmethod
     def parse_arr_city(sent):
-        t1 = re.search(r"в (\w+)", sent)[1]
-        t2 = re.search(r"по маршруту \w+ (\w+)", sent)[1]
-        return t1 if t1 else t2
+        t1 = re.search(r"в (\w+)", sent)
+        if t1:
+            return t1[1]
+        t2 = re.search(r"по маршруту \w+ (\w+)", sent)
+        if t2:
+            return t2[1]
     
     @staticmethod
     def parse_flight_number(sent):
@@ -110,6 +116,8 @@ def Answer(theme, text=None, **req):
         
         dep_city = SideDataParser.parse_dep_city(text)
 
+        c = dep_city
+
         if dep_city == "local":
             dep_city = req['meta']['timezone']
             if dep_city == "UTC":
@@ -129,12 +137,27 @@ def Answer(theme, text=None, **req):
                 arr_city = arr_city.split('/')[1]
             
         arr_city = SideDataParser.parse_city_to_airport(arr_city)
-        print(dep_city, arr_city)
 
-        flights = [get_flights_by_dep_arr_city(dep_airport, arr_airport) for dep_airport in dep_city for arr_airport in arr_city]
-        print(flights)
+        a = arr_city
 
-        return TextGenerator(pattern=PATH + "patterns/flight_pattern", data=flights).to_str()
+        logging.debug("Flight info")
+        logging.debug("Departure " + str(dep_city))
+        logging.debug("Arrival " + str(arr_city))
+
+        now = datetime.now().timestamp()
+
+        flights = [get_flight_by_dep_arr_city(dep_airport, arr_airport) for dep_airport in dep_city for arr_airport in arr_city]
+        flight = min(flights, key=lambda flight: flight['time']['scheduled']['departure'] - now if flight else 2 ** 16)
+
+        if not flight:
+            raise CityNotFound
+
+        flight['airport']['origin'] = {'position': {'region': {'city': c}}}
+        flight['airport']['destination'] = {'position': {'region': {'city': a}}}
+
+        logging.debug(flight)
+
+        return TextGenerator(pattern=PATH + "patterns/flight_pattern", data=flight).to_str()
 
     elif theme == 2:
         flight_number = SideDataParser.parse_flight_number(text)
@@ -145,6 +168,7 @@ def Answer(theme, text=None, **req):
         logging.debug("Flight info: %s" % flight_number)
 
         flight = get_flight_by_number(flight_number)
+        logging.debug(flight)
 
         return TextGenerator(pattern=PATH + "patterns/flight_pattern", data=flight).to_str()
     
