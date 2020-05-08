@@ -6,26 +6,35 @@ session = Session()
 session.headers.update({'User-agent': 'mkorkmaz/FR24/2.0'})
 
 
-def get_flights_by_dep_arr_city(dep_city, arr_city) -> List[dict]:
+def get_flights_by_dep_arr_city(dep_city, arr_city) -> dict:
     """Получает рейсы по городам валета и посадки"""
     arr_city = arr_city.upper()
     URL = f"http://api.flightradar24.com/common/v1/airport.json?code={dep_city}"
     dep_airport_data = session.get(URL).json()['result']['response']['airport']['pluginData']['schedule']['departures']
     check_destination = lambda flight: flight['flight']['airport']['destination']['code']['iata'] == arr_city
     flights = [flight for flight in dep_airport_data if check_destination(flight)]
-    return flights
-
-
-def get_flights_by_airline(air_line) -> List[dict]:
-    """Получает рейсы авиокомпании"""
-    pass
+    for i in range(len(flights)):
+        if flights[i]['status']['life']:
+            flight = flights[i]
+            break
+        elif flights[i]['status']['text'] != "Scheduled":
+            flight = flights[i - 1]
+            break
+    return flight
 
 
 def get_flight_by_number(flight_number) -> dict:
     """Получает рейс по его номеру"""
     URL = f"http://api.flightradar24.com/common/v1/flight/list.json?&fetchBy=flight&page=1&limit=25&query={flight_number}"
-    flights = session.get(URL).json()['response']['data'][0]
-    return flights
+    flights = session.get(URL).json()['result']['response']['data']
+    for i in range(25):
+        if flights[i]['status']['live']:
+            flight = flights[i]
+            break
+        elif flights[i]['status']['text'] != "Scheduled":
+            flight = flights[i - 1]
+            break
+    return flight
 
 
 def get_departures(city) -> list:
@@ -40,3 +49,9 @@ def get_arrivals(city) -> list:
     URL = f"http://api.flightradar24.com/common/v1/airport.json?code={city}"
     arr_airport_data = session.get(URL).json()['result']['response']['airport']['pluginData']['schedule']['arrivals']
     return arr_airport_data
+
+
+def translate(text) -> str:
+    api_key = "trnsl.1.1.20200508T101107Z.b482f8350bed9bb7.c9f545e58c6b697c6d1c46e5a6ce11c1630ca765"
+    tr_text = session.get(f"https://translate.yandex.net/api/v1.5/tr.json/translate?key={api_key}&lang=ru-en&text={text}").json()
+    return tr_text['text']

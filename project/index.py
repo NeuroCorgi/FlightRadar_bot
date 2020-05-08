@@ -15,6 +15,8 @@ from flask import (
 import numpy as np
 
 app = Flask(__name__)
+logging.basicConfig(filename='response.log',
+                    level=logging.DEBUG)
 
 vectorizer = Vectorizer(r"\b\w+\b")
 with open('project/data/corpus') as study_data:
@@ -25,7 +27,9 @@ y = np.array([y])
 
 X = vectorizer.fit_transform(X).toarray()
 
-classifier = KNNClassifier(neighbors=3)
+logging.info(vectorizer.get_feature_names())
+
+classifier = KNNClassifier(neighbors=7)
 classifier.fit(X, y)
 
 
@@ -58,10 +62,15 @@ def handle_alice_dialog(req, res):
         res['response']['text'] = Answer(theme=0)
         return
 
-    req_text_vector = vectorizer.git(req['request']['original_utterance'])
+    req_text_vector = vectorizer.transform(req['request']['original_utterance'])[0]
 
-    theme = classifier.predict(req_text_vector)
-    print(theme)
+    themes = classifier.predict(req_text_vector)
+    logging.debug(themes)
+
+    theme = max(themes.keys(), key=lambda x: themes[x])
+
+    if theme == -2:
+        res['response']['end_session'] = True
 
     try:
         res['response']['text'] = Answer(theme, text=req['request']['original_utterance'], **req)
@@ -73,9 +82,5 @@ def handle_alice_dialog(req, res):
         res['response']['text'] = Answer('not_found_error', text=e)
     except FlightNumberError:
         res['response']['text'] = Answer("fl_n_error")
-    
 
-    if req['request']['original_utterance'].lower() in ['ладно', 'куплю', 'покупаю', 'хорошо']:
-        res['response']['text'] = 'Слона можно найти на Яндекс.Маркете!'
-        res['response']['end_session'] = True
-        return
+    return
