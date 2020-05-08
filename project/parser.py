@@ -62,17 +62,15 @@ class SideDataParser:
 
     @staticmethod
     def parse_dep_city(sent):
-        try:
-            return re.search(r"из \w+", sent)[0][3:]
-        except TypeError:
-            return "local"
+        t1 = re.search(r"из (\w+)", sent)[1]
+        t2 = re.search(r"по маршруту (\w+)", sent)[1]
+        return t1 if t1 else t2
     
     @staticmethod
     def parse_arr_city(sent):
-        try:
-            return re.search(r"в \w+", sent)[0][2:]
-        except TypeError:
-            return "local"
+        t1 = re.search(r"в (\w+)", sent)[1]
+        t2 = re.search(r"по маршруту \w+ (\w+)", sent)[1]
+        return t1 if t1 else t2
     
     @staticmethod
     def parse_flight_number(sent):
@@ -95,8 +93,7 @@ class SideDataParser:
         with open(PATH + "airports.json") as json_airports:
             airports = json.load(json_airports)
 
-        city = translate(MorphAnalyzer().parse(city)[0].normal_form.lower())[0]
-        print(city)
+        city = translate(city).lower()
         
         city_airports = filter(lambda airport: city in airport['name'].lower(), airports)
 
@@ -131,9 +128,8 @@ def Answer(theme, text=None, **req):
             else:
                 arr_city = arr_city.split('/')[1]
             
-            arr_city = SideDataParser.parse_city_to_airport(arr_city)
-        
-        print(arr_city)
+        arr_city = SideDataParser.parse_city_to_airport(arr_city)
+        print(dep_city, arr_city)
 
         flights = [get_flights_by_dep_arr_city(dep_airport, arr_airport) for dep_airport in dep_city for arr_airport in arr_city]
         print(flights)
